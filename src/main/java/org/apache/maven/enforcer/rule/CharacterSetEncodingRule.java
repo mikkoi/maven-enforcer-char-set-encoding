@@ -52,9 +52,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
-
 
 /**
  * Checks file encodings to see if they match the parameter
@@ -62,19 +60,6 @@ import java.util.Set;
  * If file requireEncoding can not be determined it is skipped.
  */
 public final class CharacterSetEncodingRule implements EnforcerRule {
-
-    @Nonnull
-    private final String DIRECTORY_DEFAULT = "src";
-    @Nonnull
-    private final String INCLUDE_REGEX_DEFAULT = ".*";
-    @Nonnull
-    private final String EXCLUDE_REGEX_DEFAULT = "";
-
-    @Nullable
-    /**
-     * Not implemented.
-     */
-    private Map directories = null;
 
     /**
      * Validate files must match this requireEncoding.
@@ -104,80 +89,42 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
     @Nullable
     private String excludeRegex = null;
 
-    @Nullable
-    public Map getDirectories() {
-        return directories;
-    }
-
-    public void setDirectories(@Nullable final Map directories) {
-        this.directories = directories;
-    }
-
-    @Nullable
-    public String getDirectory() {
-        return directory;
-    }
-
-    public void setDirectory(@Nullable final String directory) {
-        this.directory = directory;
-    }
-
-    @Nullable
-    public String getIncludeRegex() {
-        return includeRegex;
-    }
-
-    public void setIncludeRegex(@Nullable final String includeRegex) {
-        this.includeRegex = includeRegex;
-    }
-
-    @Nullable
-    public String getExcludeRegex() {
-        return excludeRegex;
-    }
-
-    public void setExcludeRegex(@Nullable final String excludeRegex) {
-        this.excludeRegex = excludeRegex;
-    }
-
-    @Nullable
-    public String getRequireEncoding() {
-        return requireEncoding;
-    }
-
-    public void setRequireEncoding(/*@Nullable final */ String requireEncoding) {
-        this.requireEncoding = requireEncoding;
-    }
-
     public void execute(@Nonnull EnforcerRuleHelper helper)
             throws EnforcerRuleException {
         Log log = helper.getLog();
 
+        @Nonnull
+        final String DIRECTORY_DEFAULT = "src";
+        @Nonnull
+        final String INCLUDE_REGEX_DEFAULT = ".*";
+        @Nonnull
+        final String EXCLUDE_REGEX_DEFAULT = "";
+
         try {
             // get the various expressions out of the helper.
-            MavenProject project = (MavenProject) helper.evaluate("${project}");
-            MavenSession session = (MavenSession) helper.evaluate("${session}");
-            String target = helper.evaluate("${project.build.directory}").toString();
-            String artifactId = helper.evaluate("${project.artifactId}").toString();
-            String basedir = helper.evaluate("${project.basedir}").toString();
+            final MavenProject project = (MavenProject) helper.evaluate("${project}");
+            final MavenSession session = (MavenSession) helper.evaluate("${session}");
+            final String target = helper.evaluate("${project.build.directory}").toString();
+            final String artifactId = helper.evaluate("${project.artifactId}").toString();
+            final String basedir = helper.evaluate("${project.basedir}").toString();
 
             // Retrieve any component out of the session directly.
             ArtifactResolver resolver = (ArtifactResolver) helper.getComponent(ArtifactResolver.class);
             RuntimeInformation rti = (RuntimeInformation) helper.getComponent(RuntimeInformation.class);
-            log.info("Retrieved Target Folder: " + target);
-            log.info("Retrieved ArtifactId: " + artifactId);
-            log.info("Retrieved Project: " + project);
-            log.info("Retrieved RuntimeInfo: " + rti);
-            log.info("Retrieved Session: " + session);
-            log.info("Retrieved Resolver: " + resolver);
-            log.info("Retrieved Basedir: " + basedir);
-            log.info("requireEncoding: " + (requireEncoding == null ? "null" : requireEncoding));
-            log.info("directory: " + (directory == null ? "null" : directory));
-            log.info("includeRegex: " + (includeRegex == null ? "null" : includeRegex));
-            log.info("excludeRegex: " + (excludeRegex == null ? "null" : excludeRegex));
+            log.debug("Retrieved Target Folder: " + target);
+            log.debug("Retrieved ArtifactId: " + artifactId);
+            log.debug("Retrieved Project: " + project);
+            log.debug("Retrieved RuntimeInfo: " + rti);
+            log.debug("Retrieved Session: " + session);
+            log.debug("Retrieved Resolver: " + resolver);
+            log.debug("Retrieved Basedir: " + basedir);
+            log.debug("requireEncoding: " + (requireEncoding == null ? "null" : requireEncoding));
+            log.debug("directory: " + (directory == null ? "null" : directory));
+            log.debug("includeRegex: " + (includeRegex == null ? "null" : includeRegex));
+            log.debug("excludeRegex: " + (excludeRegex == null ? "null" : excludeRegex));
 
             if (this.getRequireEncoding() == null || this.getRequireEncoding().trim().length() == 0) {
-                String sourceEncoding = (String) helper.evaluate("${project.build.sourceEncoding}");
+                final String sourceEncoding = (String) helper.evaluate("${project.build.sourceEncoding}");
                 log.info("No parameter 'requiredEncoding' set. Defaults to property 'project.build.sourceEncoding'.");
                 if (sourceEncoding != null && sourceEncoding.trim().length() > 0) {
                     this.setRequireEncoding(sourceEncoding);
@@ -186,7 +133,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                 }
             }
             try {
-                Charset.forName(requireEncoding.toUpperCase());
+                Charset.forName(this.getRequireEncoding()); //  Charset names are not case-sensitive
             } catch (IllegalCharsetNameException e) {
                 throw new EnforcerRuleException("Illegal value (illegal character set name) '" + requireEncoding + "' for parameter 'requireEncoding'.");
             } catch (UnsupportedCharsetException e) {
@@ -195,38 +142,39 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                 throw new EnforcerRuleException("Illegal value (empty) '" + requireEncoding + "' for parameter 'requireEncoding'.");
             }
             if (this.getDirectory() == null || this.getDirectory().trim().length() == 0) {
-                log.info("No parameter 'directory' set. Defaults to '" + DIRECTORY_DEFAULT + "'.");
-                this.setDirectory(INCLUDE_REGEX_DEFAULT);
+                log.debug("No parameter 'directory' set. Defaults to '" + DIRECTORY_DEFAULT + "'.");
+                this.setDirectory(DIRECTORY_DEFAULT);
             }
             if (this.getIncludeRegex() == null || this.getIncludeRegex().trim().length() == 0) {
-                log.info("No parameter 'includeRegex' set. Defaults to '" + INCLUDE_REGEX_DEFAULT + "'.");
+                log.debug("No parameter 'includeRegex' set. Defaults to '" + INCLUDE_REGEX_DEFAULT + "'.");
                 this.setIncludeRegex(INCLUDE_REGEX_DEFAULT);
             }
             if (this.getExcludeRegex() == null || this.getExcludeRegex().trim().length() == 0) {
-                log.info("No parameter 'excludeRegex' set. Defaults to '" + EXCLUDE_REGEX_DEFAULT + "'.");
+                log.debug("No parameter 'excludeRegex' set. Defaults to '" + EXCLUDE_REGEX_DEFAULT + "'.");
                 this.setExcludeRegex(EXCLUDE_REGEX_DEFAULT);
             }
-            log.info("requireEncoding: " + requireEncoding);
-            log.info("directory: " + directory);
-            log.info("includeRegex: " + includeRegex);
-            log.info("excludeRegex: " + excludeRegex);
+            log.debug("requireEncoding: " + this.getRequireEncoding());
+            log.debug("directory: " + this.getDirectory());
+            log.debug("includeRegex: " + this.getIncludeRegex());
+            log.debug("excludeRegex: " + this.getExcludeRegex());
 
-            // Put all files into this collection:
-            Collection<FileResult> allFiles = new ArrayList<FileResult>();
-            Path dir = Paths.get(basedir, getDirectory());
-            log.info("Get files in dir '" + dir.toString() + "'.");
+            // Check the existence of the wanted directory:
+            final Path dir = Paths.get(basedir, getDirectory());
+            log.debug("Get files in dir '" + dir.toString() + "'.");
             if (!dir.toFile().exists()) {
                 throw new EnforcerRuleException(
                         "Directory '" + dir.toString() + "' not found."
-                        + " Specified by parameter 'directory' (value: '" + directory + "')!"
+                                + " Specified by parameter 'directory' (value: '" + this.getDirectory() + "')!"
                 );
             }
-            Collection<FileResult> faultyFiles = new ArrayList<FileResult>();
+
+            // Put all files into this collection:
+            Collection<FileResult> allFiles = new ArrayList<>();
             FileVisitor<Path> fileVisitor = new GetEncodingsFileVisitor(
-                    log, includeRegex, excludeRegex, allFiles
+                    log, this.getIncludeRegex(), this.getExcludeRegex(), allFiles
             );
             try {
-                Set<FileVisitOption> visitOptions = new LinkedHashSet<FileVisitOption>();
+                Set<FileVisitOption> visitOptions = new LinkedHashSet<>();
                 visitOptions.add(FileVisitOption.FOLLOW_LINKS);
                 Files.walkFileTree(dir,
                         visitOptions,
@@ -237,13 +185,15 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                 log.error(e.getCause() + e.getMessage());
             }
 
+            // Copy faulty files to another list.
+            Collection<FileResult> faultyFiles = new ArrayList<>();
             log.debug("Moving possible faulty files (faulty encoding) to another list.");
             for (FileResult res : allFiles) {
                 log.debug("Checking if file '" + res.getPath().toString() + "' has encoding '" + requireEncoding + "'.");
                 boolean hasCorrectEncoding = true;
                 try (FileInputStream fileInputStream = new FileInputStream(res.getPath().toFile())) {
                     byte[] bytes = ByteStreams.toByteArray(fileInputStream);
-                    Charset.availableCharsets().get(requireEncoding.toUpperCase())
+                    Charset.availableCharsets().get(requireEncoding)
                             .newDecoder().decode(ByteBuffer.wrap(bytes));
                 } catch (CharacterCodingException e) {
                     hasCorrectEncoding = false;
@@ -255,7 +205,6 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                 if(!hasCorrectEncoding) {
                     log.debug("Moving faulty file: " + res.getPath());
                     FileResult faultyFile = new FileResult.Builder(res.getPath())
-                            .size(res.getSize())
                             .lastModified(res.getLastModified())
                             .build();
                     faultyFiles.add(faultyFile);
@@ -265,7 +214,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
 
             // Report
             if (!faultyFiles.isEmpty()) {
-                StringBuilder builder = new StringBuilder();
+                final StringBuilder builder = new StringBuilder();
                 builder.append("Wrong encoding in following files:");
                 builder.append(System.getProperty("line.separator"));
                 for (FileResult res : faultyFiles) {
@@ -283,64 +232,6 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                     "Unable to lookup a component " + e.getLocalizedMessage(), e
             );
         }
-    }
-
-    private static final class GetEncodingsFileVisitor extends SimpleFileVisitor<Path> {
-        @Nonnull
-        private final Log log;
-        @Nonnull
-        private String includeRegex;
-        @Nonnull
-        private String excludeRegex;
-        @Nonnull
-        private final Collection<FileResult> results;
-
-        @Nonnull
-        public Collection<FileResult> getResults() {
-            return results;
-        }
-
-        GetEncodingsFileVisitor(
-                Log log, String includeRegex, String excludeRegex, Collection<FileResult> results
-        ) {
-            this.log = log;
-            this.includeRegex = includeRegex;
-            this.excludeRegex = excludeRegex;
-            this.results = results;
-        }
-
-        @Override
-        public FileVisitResult visitFile(
-                Path aFile, BasicFileAttributes aAttrs
-        ) throws IOException {
-            log.debug("Processing file '" + aFile.toString() + "'.");
-            if (includeRegex.length() > 0 && !aFile.toString().matches(includeRegex)) {
-                return FileVisitResult.CONTINUE;
-            } else if (includeRegex.length() > 0 && aFile.toString().matches(includeRegex)
-                    && excludeRegex.length() > 0 && aFile.toString().matches(excludeRegex)) {
-                return FileVisitResult.CONTINUE;
-            } else if (includeRegex.length() == 0
-                    && excludeRegex.length() > 0 && aFile.toString().matches(excludeRegex)) {
-                return FileVisitResult.CONTINUE;
-            } else {
-                File file = aFile.toFile();
-                FileResult res = new FileResult.Builder(aFile.toAbsolutePath())
-                        .size(file.length())
-                        .lastModified(file.lastModified())
-                        .build();
-                results.add(res);
-                return FileVisitResult.CONTINUE;
-            }
-        }
-
-        @Override
-        public FileVisitResult preVisitDirectory(
-                Path aDir, BasicFileAttributes aAttrs
-        ) throws IOException {
-            log.debug("Processing directory '" + aDir.toString() + "'.");
-            return FileVisitResult.CONTINUE;
-        }
-
     }
 
     /**
@@ -382,4 +273,144 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
     /**
      * Getters and setters for the parameters (these are filled by Maven)
      */
+
+    @Nullable
+    private String getDirectory() {
+        return directory;
+    }
+
+    private void setDirectory(@Nullable final String directory) {
+        this.directory = directory;
+    }
+
+    @Nullable
+    private String getIncludeRegex() {
+        return includeRegex;
+    }
+
+    private void setIncludeRegex(@Nullable final String includeRegex) {
+        this.includeRegex = includeRegex;
+    }
+
+    @Nullable
+    private String getExcludeRegex() {
+        return excludeRegex;
+    }
+
+    private void setExcludeRegex(@Nullable final String excludeRegex) {
+        this.excludeRegex = excludeRegex;
+    }
+
+    @Nullable
+    private String getRequireEncoding() {
+        return requireEncoding;
+    }
+
+    private void setRequireEncoding(@Nullable final String requireEncoding) {
+        this.requireEncoding = requireEncoding;
+    }
+
+    private static final class GetEncodingsFileVisitor extends SimpleFileVisitor<Path> {
+        @Nonnull
+        private final Log log;
+        @Nonnull
+        private final Collection<FileResult> results;
+        @Nonnull
+        private String includeRegex;
+        @Nonnull
+        private String excludeRegex;
+
+        GetEncodingsFileVisitor(
+                Log log, String includeRegex, String excludeRegex, Collection<FileResult> results
+        ) {
+            this.log = log;
+            this.includeRegex = includeRegex;
+            this.excludeRegex = excludeRegex;
+            this.results = results;
+        }
+
+        @Override
+        public FileVisitResult visitFile(
+                Path aFile, BasicFileAttributes aAttrs
+        ) throws IOException {
+            log.debug("Processing file '" + aFile.toString() + "'.");
+            if (includeRegex.length() > 0 && !aFile.toString().matches(includeRegex)) {
+                return FileVisitResult.CONTINUE;
+            } else if (includeRegex.length() > 0 && aFile.toString().matches(includeRegex)
+                    && excludeRegex.length() > 0 && aFile.toString().matches(excludeRegex)) {
+                return FileVisitResult.CONTINUE;
+            } else if (includeRegex.length() == 0
+                    && excludeRegex.length() > 0 && aFile.toString().matches(excludeRegex)) {
+                return FileVisitResult.CONTINUE;
+            } else {
+                File file = aFile.toFile();
+                FileResult res = new FileResult.Builder(aFile.toAbsolutePath())
+                        .lastModified(file.lastModified())
+                        .build();
+                results.add(res);
+                return FileVisitResult.CONTINUE;
+            }
+        }
+
+        @Override
+        public FileVisitResult preVisitDirectory(
+                Path aDir, BasicFileAttributes aAttrs
+        ) throws IOException {
+            log.debug("Processing directory '" + aDir.toString() + "'.");
+            return FileVisitResult.CONTINUE;
+        }
+
+    }
+
+}
+
+/**
+ * Internal class for gathering all files.
+ * Also used for caching the result of the whole test.
+ */
+class FileResult {
+
+    @Nonnull
+    private final Path path;
+
+    private final long lastModified;
+
+    private FileResult(@Nonnull final Builder builder) {
+        this.path = builder.path;
+        this.lastModified = builder.lastModified;
+    }
+
+    @Nonnull
+    Path getPath() {
+        return path;
+    }
+
+    long getLastModified() {
+        return lastModified;
+    }
+
+    @Override
+    public String toString() {
+        return "FileResult{" + "path=" + path.toString()
+                + ", lastModified=" + lastModified + "}";
+    }
+
+    static class Builder {
+        @Nonnull
+        private Path path;
+        private long lastModified = 0;
+
+        Builder(@Nonnull final Path value) {
+            this.path = value;
+        }
+
+        Builder lastModified(final long value) {
+            this.lastModified = value;
+            return this;
+        }
+
+        FileResult build() {
+            return new FileResult(this);
+        }
+    }
 }
