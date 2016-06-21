@@ -19,6 +19,8 @@ package org.apache.maven.enforcer.rule;
  * under the License.
  */
 
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.io.ByteStreams;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.enforcer.rule.api.EnforcerRule;
@@ -52,6 +54,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -60,6 +63,11 @@ import java.util.Set;
  * If file requireEncoding can not be determined it is skipped.
  */
 public final class CharacterSetEncodingRule implements EnforcerRule {
+
+    @Nonnull
+    private final String INCLUDE_REGEX_DEFAULT = ".*";
+    @Nonnull
+    private final String EXCLUDE_REGEX_DEFAULT = "";
 
     /**
      * Validate files must match this requireEncoding.
@@ -95,10 +103,6 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
 
         @Nonnull
         final String DIRECTORY_DEFAULT = "src";
-        @Nonnull
-        final String INCLUDE_REGEX_DEFAULT = ".*";
-        @Nonnull
-        final String EXCLUDE_REGEX_DEFAULT = "";
 
         try {
             // get the various expressions out of the helper.
@@ -169,21 +173,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
             }
 
             // Put all files into this collection:
-            Collection<FileResult> allFiles = new ArrayList<>();
-            FileVisitor<Path> fileVisitor = new GetEncodingsFileVisitor(
-                    log, this.getIncludeRegex(), this.getExcludeRegex(), allFiles
-            );
-            try {
-                Set<FileVisitOption> visitOptions = new LinkedHashSet<>();
-                visitOptions.add(FileVisitOption.FOLLOW_LINKS);
-                Files.walkFileTree(dir,
-                        visitOptions,
-                        Integer.MAX_VALUE,
-                        fileVisitor
-                );
-            } catch (Exception e) {
-                log.error(e.getCause() + e.getMessage());
-            }
+            Collection<FileResult> allFiles = getFileResults(log, dir);
 
             // Copy faulty files to another list.
             Collection<FileResult> faultyFiles = new ArrayList<>();
@@ -202,7 +192,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                     log.error(e.getMessage());
                     hasCorrectEncoding = false;
                 }
-                if(!hasCorrectEncoding) {
+                if (!hasCorrectEncoding) {
                     log.debug("Moving faulty file: " + res.getPath());
                     FileResult faultyFile = new FileResult.Builder(res.getPath())
                             .lastModified(res.getLastModified())
@@ -234,6 +224,29 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
         }
     }
 
+    @Nonnull
+    private Collection<FileResult> getFileResults(final Log log, final Path dir) {
+        Collection<FileResult> allFiles = new ArrayList<>();
+        FileVisitor<Path> fileVisitor = new GetEncodingsFileVisitor(
+                log,
+                this.getIncludeRegex() != null ? this.getIncludeRegex() : INCLUDE_REGEX_DEFAULT,
+                this.getExcludeRegex() != null ? this.getExcludeRegex() : EXCLUDE_REGEX_DEFAULT,
+                allFiles
+        );
+        try {
+            Set<FileVisitOption> visitOptions = new LinkedHashSet<>();
+            visitOptions.add(FileVisitOption.FOLLOW_LINKS);
+            Files.walkFileTree(dir,
+                    visitOptions,
+                    Integer.MAX_VALUE,
+                    fileVisitor
+            );
+        } catch (Exception e) {
+            log.error(e.getCause() + e.getMessage());
+        }
+        return allFiles;
+    }
+
     /**
      * If your rule is cacheable, you must return a unique id when parameters or conditions
      * change that would cause the result to be different. Multiple cached results are stored
@@ -245,8 +258,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      */
     @Nullable
     public String getCacheId() {
-        // TODO Return a hash from parameters and the complete tree of files and their last change time.
-        return "" + this;
+        return String.valueOf(false);
     }
 
     /**
@@ -368,7 +380,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
  * Internal class for gathering all files.
  * Also used for caching the result of the whole test.
  */
-class FileResult {
+class FileResult implements Comparable<FileResult> {
 
     @Nonnull
     private final Path path;
@@ -390,9 +402,27 @@ class FileResult {
     }
 
     @Override
+    public int compareTo(FileResult that) {
+        return ComparisonChain.start()
+                .compare(this.path.toString(), that.path.toString())
+                .compare(this.lastModified, that.lastModified)
+                .result();
+    }
+
+    /**
+     * @return "FileResult{path=s,lastModified=1}"
+     */
+    @Override
     public String toString() {
-        return "FileResult{" + "path=" + path.toString()
-                + ", lastModified=" + lastModified + "}";
+        return MoreObjects.toStringHelper("FileResult")
+                .add("path", path.toString())
+                .add("lastModified", lastModified)
+                .toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path, lastModified);
     }
 
     static class Builder {
