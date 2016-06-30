@@ -3,7 +3,7 @@
  */
 
 @ParametersAreNonnullByDefault
-package org.apache.maven.enforcer.rule;
+package org.apache.maven.plugins.enforcer.rule.charsetencoding;
 
 //CHECKSTYLE:OFF
 
