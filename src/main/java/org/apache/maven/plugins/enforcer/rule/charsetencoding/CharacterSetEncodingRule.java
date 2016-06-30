@@ -1,4 +1,4 @@
-package org.apache.maven.enforcer.rule;
+package org.apache.maven.plugins.enforcer.rule.charsetencoding;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,19 +19,12 @@ package org.apache.maven.enforcer.rule;
  * under the License.
  */
 
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.ComparisonChain;
 import com.google.common.io.ByteStreams;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.execution.RuntimeInformation;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,6 +34,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.FileVisitOption;
@@ -54,40 +48,45 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Checks file encodings to see if they match the parameter
  * or Maven property project.build.sourceEncoding.
  * If file requireEncoding can not be determined it is skipped.
  */
+@SuppressWarnings("WeakerAccess")
 public final class CharacterSetEncodingRule implements EnforcerRule {
 
     @Nonnull
-    private final String INCLUDE_REGEX_DEFAULT = ".*";
+    private static final String INCLUDE_REGEX_DEFAULT = ".*";
     @Nonnull
-    private final String EXCLUDE_REGEX_DEFAULT = "";
+    private static final String EXCLUDE_REGEX_DEFAULT = "";
+    @Nonnull
+    private static final String DIRECTORY_DEFAULT = "src";
 
+    /**
+     * Faulty files list. Can be accessed after processing execute().
+     */
+    @Nonnull
+    private final Collection<FileResult> faultyFiles = new ArrayList<>();
     /**
      * Validate files must match this requireEncoding.
      * Default: ${project.builder.sourceEncoding}.
      */
     @Nullable
     private String requireEncoding = null;
-
     /**
      * Directory to search for files
      */
     @Nullable
     private String directory = null;
-
     /**
      * Regular Expression to match file names against for filtering in
      */
     @Nullable
     private String includeRegex = null;
-
     /**
      * Regular Expression to match file names against for filtering out
      * Can be used together with includeRegex.
@@ -97,30 +96,26 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
     @Nullable
     private String excludeRegex = null;
 
+    /**
+     * Get the faulty files list
+     */
+    @Nonnull
+    public Collection<FileResult> getFaultyFiles() {
+        return faultyFiles;
+    }
+
+    /**
+     * @param helper EnforcerRuleHelper
+     * @throws EnforcerRuleException
+     */
     public void execute(@Nonnull EnforcerRuleHelper helper)
             throws EnforcerRuleException {
         Log log = helper.getLog();
 
-        @Nonnull
-        final String DIRECTORY_DEFAULT = "src";
-
         try {
             // get the various expressions out of the helper.
-            final MavenProject project = (MavenProject) helper.evaluate("${project}");
-            final MavenSession session = (MavenSession) helper.evaluate("${session}");
-            final String target = helper.evaluate("${project.build.directory}").toString();
-            final String artifactId = helper.evaluate("${project.artifactId}").toString();
-            final String basedir = helper.evaluate("${project.basedir}").toString();
+            String basedir = helper.evaluate("${project.basedir}").toString();
 
-            // Retrieve any component out of the session directly.
-            ArtifactResolver resolver = (ArtifactResolver) helper.getComponent(ArtifactResolver.class);
-            RuntimeInformation rti = (RuntimeInformation) helper.getComponent(RuntimeInformation.class);
-            log.debug("Retrieved Target Folder: " + target);
-            log.debug("Retrieved ArtifactId: " + artifactId);
-            log.debug("Retrieved Project: " + project);
-            log.debug("Retrieved RuntimeInfo: " + rti);
-            log.debug("Retrieved Session: " + session);
-            log.debug("Retrieved Resolver: " + resolver);
             log.debug("Retrieved Basedir: " + basedir);
             log.debug("requireEncoding: " + (requireEncoding == null ? "null" : requireEncoding));
             log.debug("directory: " + (directory == null ? "null" : directory));
@@ -146,15 +141,15 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                 throw new EnforcerRuleException("Illegal value (empty) '" + requireEncoding + "' for parameter 'requireEncoding'.");
             }
             if (this.getDirectory() == null || this.getDirectory().trim().length() == 0) {
-                log.debug("No parameter 'directory' set. Defaults to '" + DIRECTORY_DEFAULT + "'.");
+                log.info("No parameter 'directory' set. Defaults to '" + DIRECTORY_DEFAULT + "'.");
                 this.setDirectory(DIRECTORY_DEFAULT);
             }
             if (this.getIncludeRegex() == null || this.getIncludeRegex().trim().length() == 0) {
-                log.debug("No parameter 'includeRegex' set. Defaults to '" + INCLUDE_REGEX_DEFAULT + "'.");
+                log.info("No parameter 'includeRegex' set. Defaults to '" + INCLUDE_REGEX_DEFAULT + "'.");
                 this.setIncludeRegex(INCLUDE_REGEX_DEFAULT);
             }
             if (this.getExcludeRegex() == null || this.getExcludeRegex().trim().length() == 0) {
-                log.debug("No parameter 'excludeRegex' set. Defaults to '" + EXCLUDE_REGEX_DEFAULT + "'.");
+                log.info("No parameter 'excludeRegex' set. Defaults to '" + EXCLUDE_REGEX_DEFAULT + "'.");
                 this.setExcludeRegex(EXCLUDE_REGEX_DEFAULT);
             }
             log.debug("requireEncoding: " + this.getRequireEncoding());
@@ -176,15 +171,16 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
             Collection<FileResult> allFiles = getFileResults(log, dir);
 
             // Copy faulty files to another list.
-            Collection<FileResult> faultyFiles = new ArrayList<>();
             log.debug("Moving possible faulty files (faulty encoding) to another list.");
             for (FileResult res : allFiles) {
                 log.debug("Checking if file '" + res.getPath().toString() + "' has encoding '" + requireEncoding + "'.");
                 boolean hasCorrectEncoding = true;
                 try (FileInputStream fileInputStream = new FileInputStream(res.getPath().toFile())) {
                     byte[] bytes = ByteStreams.toByteArray(fileInputStream);
-                    Charset.availableCharsets().get(requireEncoding)
-                            .newDecoder().decode(ByteBuffer.wrap(bytes));
+                    Charset charset = Charset.forName(this.getRequireEncoding());
+                    CharsetDecoder decoder = charset.newDecoder();
+                    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+                    decoder.decode(byteBuffer);
                 } catch (CharacterCodingException e) {
                     hasCorrectEncoding = false;
                 } catch (IOException e) {
@@ -198,6 +194,8 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                             .lastModified(res.getLastModified())
                             .build();
                     faultyFiles.add(faultyFile);
+                } else {
+                    log.debug("Has correct encoding. Not moving to faulty files list.");
                 }
             }
             log.debug("All faulty files moved.");
@@ -216,10 +214,6 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
         } catch (ExpressionEvaluationException e) {
             throw new EnforcerRuleException(
                     "Unable to lookup an expression " + e.getLocalizedMessage(), e
-            );
-        } catch (ComponentLookupException e) {
-            throw new EnforcerRuleException(
-                    "Unable to lookup a component " + e.getLocalizedMessage(), e
             );
         }
     }
@@ -278,7 +272,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      * by the helper need to be queried. You may for example, store certain objects in your rule
      * and then query them later.
      */
-    public boolean isResultValid(EnforcerRule arg0) {
+    public boolean isResultValid(@Nullable EnforcerRule arg0) {
         return false;
     }
 
@@ -286,58 +280,78 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      * Getters and setters for the parameters (these are filled by Maven)
      */
 
+    @SuppressWarnings("WeakerAccess")
     @Nullable
-    private String getDirectory() {
+    public String getDirectory() {
         return directory;
     }
 
-    private void setDirectory(@Nullable final String directory) {
+    @SuppressWarnings("WeakerAccess")
+    public void setDirectory(@Nullable final String directory) {
         this.directory = directory;
     }
 
+    @SuppressWarnings("WeakerAccess")
     @Nullable
-    private String getIncludeRegex() {
+    public String getIncludeRegex() {
         return includeRegex;
     }
 
-    private void setIncludeRegex(@Nullable final String includeRegex) {
+    @SuppressWarnings("WeakerAccess")
+    public void setIncludeRegex(@Nullable final String includeRegex) {
         this.includeRegex = includeRegex;
     }
 
+    @SuppressWarnings("WeakerAccess")
     @Nullable
-    private String getExcludeRegex() {
+    public String getExcludeRegex() {
         return excludeRegex;
     }
 
-    private void setExcludeRegex(@Nullable final String excludeRegex) {
+    @SuppressWarnings("WeakerAccess")
+    public void setExcludeRegex(@Nullable final String excludeRegex) {
         this.excludeRegex = excludeRegex;
     }
 
+    @SuppressWarnings("WeakerAccess")
     @Nullable
-    private String getRequireEncoding() {
+    public String getRequireEncoding() {
         return requireEncoding;
     }
 
-    private void setRequireEncoding(@Nullable final String requireEncoding) {
+    @SuppressWarnings("WeakerAccess")
+    public void setRequireEncoding(@Nullable final String requireEncoding) {
         this.requireEncoding = requireEncoding;
     }
 
     private static final class GetEncodingsFileVisitor extends SimpleFileVisitor<Path> {
         @Nonnull
         private final Log log;
+        private final boolean includeRegexUsed;
+        @Nonnull
+        private final Pattern includeRegexPattern;
+        private final boolean excludeRegexUsed;
+        @Nonnull
+        private final Pattern excludeRegexPattern;
         @Nonnull
         private final Collection<FileResult> results;
-        @Nonnull
-        private String includeRegex;
-        @Nonnull
-        private String excludeRegex;
 
         GetEncodingsFileVisitor(
-                Log log, String includeRegex, String excludeRegex, Collection<FileResult> results
+                Log log, @Nonnull final String includeRegex, @Nonnull final String excludeRegex, Collection<FileResult> results
         ) {
             this.log = log;
-            this.includeRegex = includeRegex;
-            this.excludeRegex = excludeRegex;
+            // Attn. Because we have includeRegex default (.*) which replaces
+            // an empty includeRegex, includeRegex can never have length 0 chars!
+            // But excludeRegex can have length 0 chars!
+            includeRegexUsed = true;
+            includeRegexPattern = Pattern.compile(includeRegex);
+            if (excludeRegex.length() > 0) {
+                excludeRegexUsed = true;
+                excludeRegexPattern = Pattern.compile(excludeRegex);
+            } else {
+                excludeRegexUsed = false;
+                excludeRegexPattern = Pattern.compile("");
+            }
             this.results = results;
         }
 
@@ -345,102 +359,32 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
         public FileVisitResult visitFile(
                 Path aFile, BasicFileAttributes aAttrs
         ) throws IOException {
-            log.debug("Processing file '" + aFile.toString() + "'.");
-            if (includeRegex.length() > 0 && !aFile.toString().matches(includeRegex)) {
+            log.debug("Visiting file '" + aFile.toString() + "'.");
+            if (includeRegexUsed && !includeRegexPattern.matcher(aFile.toString()).find()) {
+                log.debug("File not matches includeRegex in-filter. Exclude file from list!");
                 return FileVisitResult.CONTINUE;
-            } else if (includeRegex.length() > 0 && aFile.toString().matches(includeRegex)
-                    && excludeRegex.length() > 0 && aFile.toString().matches(excludeRegex)) {
+            }
+            if (excludeRegexUsed && excludeRegexPattern.matcher(aFile.toString()).find()) {
+                log.debug("File matches excludeRegex out-filter. Exclude file from list!");
                 return FileVisitResult.CONTINUE;
-            } else if (includeRegex.length() == 0
-                    && excludeRegex.length() > 0 && aFile.toString().matches(excludeRegex)) {
-                return FileVisitResult.CONTINUE;
-            } else {
-                File file = aFile.toFile();
+            }
+            log.debug("File matches includeRegex in-filter and not matches excludeRegex out-filter. Include file to list!");
+            File file = aFile.toFile();
                 FileResult res = new FileResult.Builder(aFile.toAbsolutePath())
                         .lastModified(file.lastModified())
                         .build();
                 results.add(res);
                 return FileVisitResult.CONTINUE;
-            }
         }
 
         @Override
         public FileVisitResult preVisitDirectory(
                 Path aDir, BasicFileAttributes aAttrs
         ) throws IOException {
-            log.debug("Processing directory '" + aDir.toString() + "'.");
+            log.debug("Visiting directory '" + aDir.toString() + "'.");
             return FileVisitResult.CONTINUE;
         }
 
     }
 
-}
-
-/**
- * Internal class for gathering all files.
- * Also used for caching the result of the whole test.
- */
-class FileResult implements Comparable<FileResult> {
-
-    @Nonnull
-    private final Path path;
-
-    private final long lastModified;
-
-    private FileResult(@Nonnull final Builder builder) {
-        this.path = builder.path;
-        this.lastModified = builder.lastModified;
-    }
-
-    @Nonnull
-    Path getPath() {
-        return path;
-    }
-
-    long getLastModified() {
-        return lastModified;
-    }
-
-    @Override
-    public int compareTo(FileResult that) {
-        return ComparisonChain.start()
-                .compare(this.path.toString(), that.path.toString())
-                .compare(this.lastModified, that.lastModified)
-                .result();
-    }
-
-    /**
-     * @return "FileResult{path=s,lastModified=1}"
-     */
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper("FileResult")
-                .add("path", path.toString())
-                .add("lastModified", lastModified)
-                .toString();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(path, lastModified);
-    }
-
-    static class Builder {
-        @Nonnull
-        private Path path;
-        private long lastModified = 0;
-
-        Builder(@Nonnull final Path value) {
-            this.path = value;
-        }
-
-        Builder lastModified(final long value) {
-            this.lastModified = value;
-            return this;
-        }
-
-        FileResult build() {
-            return new FileResult(this);
-        }
-    }
 }
