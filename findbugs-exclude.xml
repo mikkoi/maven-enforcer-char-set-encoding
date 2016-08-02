@@ -4,7 +4,7 @@
     <!--</Match>-->
 
     <!--<Match>-->
-    <!--<Class name="org.apache.maven.plugins.enforcer.rule.CharacterSetEncodingRule" />-->
+    <!--<Class name="org.mjk.maven.plugins.enforcer.rule.CharacterSetEncodingRule" />-->
     <!--<Bug code="DE,UrF,SIC" />-->
     <!--</Match>-->
 

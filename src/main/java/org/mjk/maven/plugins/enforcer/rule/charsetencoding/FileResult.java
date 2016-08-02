@@ -1,10 +1,9 @@
-package org.apache.maven.plugins.enforcer.rule.charsetencoding;
+package org.mjk.maven.plugins.enforcer.rule.charsetencoding;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -58,7 +57,7 @@ final class FileResult implements Comparable<FileResult> {
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
-    public boolean equals(@Nullable final Object o) {
+    public boolean equals(Object o) {
         return Objects.equals(this, o);
     }
 

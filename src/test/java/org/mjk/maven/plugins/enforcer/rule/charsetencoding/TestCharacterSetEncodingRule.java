@@ -1,4 +1,4 @@
-package org.apache.maven.plugins.enforcer.rule.charsetencoding;
+package org.mjk.maven.plugins.enforcer.rule.charsetencoding;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
