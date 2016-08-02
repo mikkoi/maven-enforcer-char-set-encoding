@@ -1,4 +1,4 @@
-package org.mjk.maven.plugins.enforcer.rule.charsetencoding;
+package com.github.mikkoi.maven.plugins.enforcer.rule.charsetencoding;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.mjk.maven.enforcer.rule</groupId>
+    <groupId>com.github.mikkoi.maven.enforcer.rule</groupId>
     <artifactId>char-set-encoding-rule</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -213,7 +213,7 @@
                     <xmlOutput>true</xmlOutput>
                     <!-- Configures the directory in which the XML report is created -->
                     <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-                    <excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
                 </configuration>
                 <executions>
                     <!-- Ensures that FindBugs inspects source code when project is compiled. -->
@@ -227,6 +227,7 @@
                 </executions>
             </plugin>
             <plugin>
+                <!--Another source code analyzer. https://pmd.github.io/-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.6</version>

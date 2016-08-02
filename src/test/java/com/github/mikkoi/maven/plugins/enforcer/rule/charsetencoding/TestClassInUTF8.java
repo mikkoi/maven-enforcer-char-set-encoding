@@ -1,4 +1,4 @@
-package org.mjk.maven.plugins.enforcer.rule.charsetencoding;
+package com.github.mikkoi.maven.plugins.enforcer.rule.charsetencoding;
 
 /**
  * Created by someone with Ä, Ö and Å in his name.

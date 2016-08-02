@@ -1,4 +1,4 @@
-package org.mjk.maven.plugins.enforcer.rule.charsetencoding;
+package com.github.mikkoi.maven.plugins.enforcer.rule.charsetencoding;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
