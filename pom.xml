@@ -10,6 +10,7 @@
     <packaging>jar</packaging>
     <name>Maven Enforcer Char Set Encoding</name>
     <description>Maven Enforcer plugin: Force the character set of all or any file in the project.</description>
+    <url>https://github.com/mikkoi/maven-enforcer-char-set-encoding</url>
     <inceptionYear>2016</inceptionYear>
 
     <licenses>
@@ -22,6 +23,8 @@
     </licenses>
 
     <scm>
+        <connection>scm:git:git://github.com/mikkoi/maven-enforcer-char-set-encoding.git</connection>
+        <developerConnection>scm:git:ssh://github.com:mikkoi/maven-enforcer-char-set-encoding.git</developerConnection>
         <url>https://github.com/mikkoi/maven-enforcer-char-set-encoding</url>
     </scm>
 
@@ -46,7 +49,7 @@
     </developers>
 
     <properties>
-        <api.version>1.4.1</api.version>
+        <enforcer.api.version>1.4.1</enforcer.api.version>
         <maven.version>2.0.9</maven.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -59,19 +62,19 @@
         <dependency>
             <groupId>org.apache.maven.enforcer</groupId>
             <artifactId>enforcer-api</artifactId>
-            <version>${api.version}</version>
+            <version>${enforcer.api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.enforcer</groupId>
             <artifactId>enforcer-rules</artifactId>
-            <version>${api.version}</version>
+            <version>${enforcer.api.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.enforcer</groupId>
             <artifactId>enforcer-rules</artifactId>
-            <version>${api.version}</version>
+            <version>${enforcer.api.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
