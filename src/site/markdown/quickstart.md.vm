@@ -1,0 +1,139 @@
+# Quickstart Guide
+
+
+## Preliminaries
+
+* Your Maven project has a site generated in `target/site`, and this site is ready to be deployed.
+* Your project sources are hosted on a Github repository
+* You have the authorizations to `push` code to this repository.
+
+## Configuring the plugin
+
+In your project's `pom` file, add ${project.artifact} in the plugin list.
+
+
+    <plugin>
+        <!-- Deploy the web site -->
+        <groupId>${project.groupId}</groupId>
+        <artifactId>${project.artifactId}</artifactId>
+        <version>${project.version}</version>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>site</goal>
+                </goals>
+                <!-- select the Maven phase in which the plugin will be executed -->
+                <phase>site-deploy</phase>
+                <configuration>
+                    <!-- Plugin configuration ges here -->
+
+                    <server>github</server>
+
+                    <!-- The commit message -->
+                    <message>Building site for my project</message>
+                    <!-- The location where the site is uploaded -->
+                    <path>${site.path}</path>
+                    <!-- Use merge or override the content -->
+                    <merge>true</merge>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+
+
+To know more about plugin's configuration and parameters check the (mojo page)[TODO].
+
+## Configuring the project location
+
+It's also important to configure the project `url` to indicate the project's Github repository, such as in:
+
+
+    <url>https://github.com/nanoko-project/coffee-mill-maven-plugin</url>
+
+
+There are other ways to indicate the Github project on which the site will be published. Check the (configure
+project)[configure-project] page.
+
+## Configuring the credentials
+
+Now that the plugin is configured, and the project location is specified correctly,
+you need to provide your Github credentials. These credentials are used by Maven to push the site.
+
+Open your Maven settings (`~/.m2/settings.xml`) and add the following server configuration:
+
+
+
+    <server>
+        <id>github</id>
+        <username>YOUR_GITHUB_USERNAME</username>
+        <password>YOUR_PASSWORD</password>
+    </server>
+
+
+# Executing the plugin
+
+If you choose the `site phase in the plugin configuration, the Maven site is generated and uploaded with:
+
+
+    mvn clean site
+
+
+
+
+
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <dependencies>
+            <dependency>
+                <groupId>com.github.mikkoi.maven.enforcer.rule</groupId>
+                <artifactId>char-set-encoding-rule</artifactId>
+                <version>1.0</version>
+            </dependency>
+        </dependencies>
+        <executions>
+            <execution>
+                <id>enforce-project-properties-and-configuration</id>
+                <goals>
+                    <goal>enforce</goal>
+                </goals>
+                <configuration>
+                    <rules>
+                        <requireProperty>
+                            <property>project.build.sourceEncoding</property>
+                            <message>Property 'project.build.sourceEncoding' is mandatory!</message>
+                            <regex>UTF-8</regex>
+                            <regexMessage>The 'project.build.sourceEncoding' property must have value 'UTF-8'.
+                            </regexMessage>
+                        </requireProperty>
+                    </rules>
+                    <fail>true</fail>
+                </configuration>
+            </execution>
+            <execution>
+                <id>enforce-project-character-encoding-UTF-8</id>
+                <goals>
+                    <goal>enforce</goal>
+                </goals>
+                <configuration>
+                    <rules>
+                        <requireUTF-8Encoding implementation="com.github.mikkoi.maven.plugins.enforcer.rule.charsetencoding.CharacterSetEncodingRule">
+                            <!-- Validate files against this encoding -->
+                            <requireEncoding>UTF-8</requireEncoding>
+                            <!-- Which dirs to scan. This is multimodule project, so everything down from current dir! -->
+                            <directory>.</directory>
+                            <!-- Exclude files with names matching regex below -->
+                            <!--<excludeRegex>^.*\.(gif|jpg|png|jsp|jspf|properties)$</excludeRegex>-->
+
+                            <!-- exclude JAX WS generated files in clients/model/[...]/schemas/generated-->
+                            <!-- because jaxws-maven-plugin seems to be broken (converts to wrong char enc ... -->
+                            <excludeRegex>^.*[/|\\]generated[/|\\].*\.java$</excludeRegex>
+                            <!-- Include files with names matching regex below -->
+                            <includeRegex>^.*\.java</includeRegex>
+                        </requireUTF-8Encoding>
+                    </rules>
+                    <fail>true</fail>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>

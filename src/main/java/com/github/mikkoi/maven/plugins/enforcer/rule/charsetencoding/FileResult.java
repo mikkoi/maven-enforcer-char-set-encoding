@@ -32,7 +32,7 @@ final class FileResult implements Comparable<FileResult> {
     }
 
     @Override
-    public int compareTo(FileResult that) {
+    public int compareTo(final FileResult that) {
         return ComparisonChain.start()
                 .compare(this.path.toString(), that.path.toString())
                 .compare(this.lastModified, that.lastModified)
@@ -57,10 +57,13 @@ final class FileResult implements Comparable<FileResult> {
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         return Objects.equals(this, o);
     }
 
+    /**
+     * Builder class.
+     */
     static class Builder {
         @Nonnull
         private Path path;

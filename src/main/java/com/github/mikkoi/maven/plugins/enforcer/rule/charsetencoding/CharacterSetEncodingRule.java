@@ -78,12 +78,12 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
     @Nullable
     private String requireEncoding = null;
     /**
-     * Directory to search for files
+     * Directory to search for files.
      */
     @Nullable
     private String directory = null;
     /**
-     * Regular Expression to match file names against for filtering in
+     * Regular Expression to match file names against for filtering in.
      */
     @Nullable
     private String includeRegex = null;
@@ -97,7 +97,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
     private String excludeRegex = null;
 
     /**
-     * Get the faulty files list
+     * Get the faulty files list.
      */
     @Nonnull
     public Collection<FileResult> getFaultyFiles() {
@@ -108,7 +108,7 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      * @param helper EnforcerRuleHelper
      * @throws EnforcerRuleException Throws when error
      */
-    public void execute(@Nonnull EnforcerRuleHelper helper)
+    public void execute(@Nonnull final EnforcerRuleHelper helper)
             throws EnforcerRuleException {
         Log log = helper.getLog();
 
@@ -249,6 +249,8 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      * The easiest way to do this is to return a hash computed from the values of your parameters.
      * <p>
      * If your rule is not cacheable, then the result here is not important, you may return anything.
+     *
+     * @return Always false here.
      */
     @Nullable
     public String getCacheId() {
@@ -260,6 +262,8 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      * forked builds and other things, a given rule may be executed more than once for the same
      * project. This means that even things that change from project to project may still
      * be cacheable in certain instances.
+     *
+     * @return Always false here.
      */
     public boolean isCacheable() {
         return false;
@@ -271,13 +275,16 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
      * this can be done by generating unique ids, but sometimes the results of objects returned
      * by the helper need to be queried. You may for example, store certain objects in your rule
      * and then query them later.
+     *
+     * @param arg0 EnforcerRule
+     * @return Always false here.
      */
-    public boolean isResultValid(@Nullable EnforcerRule arg0) {
+    public boolean isResultValid(@Nullable final EnforcerRule arg0) {
         return false;
     }
 
     /**
-     * Getters and setters for the parameters (these are filled by Maven)
+     * Getters and setters for the parameters (these are filled by Maven).
      */
 
     @SuppressWarnings("WeakerAccess")
@@ -324,7 +331,10 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
         this.requireEncoding = requireEncoding;
     }
 
-    private static final class GetEncodingsFileVisitor extends SimpleFileVisitor<Path> {
+    /**
+     * Extended SimpleFileVisitor for walking through the files.
+     */
+    private static class GetEncodingsFileVisitor extends SimpleFileVisitor<Path> {
         @Nonnull
         private final Log log;
         private final boolean includeRegexUsed;
@@ -336,10 +346,21 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
         @Nonnull
         private final Collection<FileResult> results;
 
+        /**
+         * Constructor.
+         *
+         * @param pluginLog    Maven Plugin logging channel.
+         * @param includeRegex Include regex pattern.
+         * @param excludeRegex Exclude regex pattern.
+         * @param fileResults  Initialized collection to be filled.
+         */
         GetEncodingsFileVisitor(
-                Log log, @Nonnull final String includeRegex, @Nonnull final String excludeRegex, Collection<FileResult> results
+                @Nonnull final Log pluginLog,
+                @Nonnull final String includeRegex,
+                @Nonnull final String excludeRegex,
+                @Nonnull final Collection<FileResult> fileResults
         ) {
-            this.log = log;
+            this.log = pluginLog;
             // Attn. Because we have includeRegex default (.*) which replaces
             // an empty includeRegex, includeRegex can never have length 0 chars!
             // But excludeRegex can have length 0 chars!
@@ -352,12 +373,12 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
                 excludeRegexUsed = false;
                 excludeRegexPattern = Pattern.compile("");
             }
-            this.results = results;
+            this.results = fileResults;
         }
 
         @Override
         public FileVisitResult visitFile(
-                Path aFile, BasicFileAttributes aAttrs
+                final Path aFile, final BasicFileAttributes aAttrs
         ) throws IOException {
             log.debug("Visiting file '" + aFile.toString() + "'.");
             if (includeRegexUsed && !includeRegexPattern.matcher(aFile.toString()).find()) {
@@ -370,16 +391,16 @@ public final class CharacterSetEncodingRule implements EnforcerRule {
             }
             log.debug("File matches includeRegex in-filter and not matches excludeRegex out-filter. Include file to list!");
             File file = aFile.toFile();
-                FileResult res = new FileResult.Builder(aFile.toAbsolutePath())
-                        .lastModified(file.lastModified())
-                        .build();
-                results.add(res);
-                return FileVisitResult.CONTINUE;
+            FileResult res = new FileResult.Builder(aFile.toAbsolutePath())
+                    .lastModified(file.lastModified())
+                    .build();
+            results.add(res);
+            return FileVisitResult.CONTINUE;
         }
 
         @Override
         public FileVisitResult preVisitDirectory(
-                Path aDir, BasicFileAttributes aAttrs
+                final Path aDir, final BasicFileAttributes aAttrs
         ) throws IOException {
             log.debug("Visiting directory '" + aDir.toString() + "'.");
             return FileVisitResult.CONTINUE;

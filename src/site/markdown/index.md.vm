@@ -1,0 +1,30 @@
+Maven Enforcer Plugin Rule: Character Set Encoding
+==================================================
+
+[Maven Enforcer Plugin](http://maven.apache.org/enforcer/maven-enforcer-plugin/)
+provides goals to control certain environmental constraints such as Maven version,
+JDK version and OS family along with many more standard rules and user created rules.
+
+`char-set-encoding-rule` is a user created [custom rule](http://maven.apache.org/enforcer/enforcer-api/writing-a-custom-rule.html)
+to force the character set of any or all the files in the build.
+
+It often happens that when files go around between different members of a programming team -- especially
+if the team is international -- they also change their
+[character encoding](https://en.wikipedia.org/wiki/Character_encoding) by accident. This Maven plugin
+check that all the files (or only selected files) are encoded in the proper encoding. In this time and age
+(year 2016) that would most likely be UTF-8 encoding but other encodings are also still used, often with good reason
+in strictly localized environments.
+
+To use the Enforcer rule, read the [quickstart](quickstart.html) guide.
+
+Released builds are available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cchar-set-encoding-rule).
+
+Deducting the Character Set
+---------------------------
+
+The rule uses the [icu4j](http://icu-project.org/) libraries to try to deduct the file's character set.
+Unfortunately, it is not always possible to get a 100% exact result. There is always some (guessing involved)
+[http://programmers.stackexchange.com/questions/187169/how-to-detect-the-encoding-of-a-file#answer-187174],
+especially when the file contains no text or no text with 8-bit characters. Therefore,
+`char-set-encoding-rule` does not actually try to deduct what a file's character set is. Instead, it asks from `icu4j`
+if that file's char set is compatible with the wanted character set.

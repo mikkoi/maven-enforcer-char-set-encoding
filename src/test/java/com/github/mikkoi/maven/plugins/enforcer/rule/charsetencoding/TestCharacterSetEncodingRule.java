@@ -10,6 +10,9 @@ import javax.annotation.Nonnull;
 
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Test class CharacterSetEncodingRule.
+ */
 public final class TestCharacterSetEncodingRule {
 
     @Test

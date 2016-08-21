@@ -28,6 +28,11 @@
         <url>https://github.com/mikkoi/maven-enforcer-char-set-encoding</url>
     </scm>
 
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/mikkoi/maven-enforcer-char-set-encoding/issues</url>
+    </issueManagement>
+
     <developers>
         <developer>
             <id>mikkoi</id>
@@ -40,6 +45,8 @@
                 <role>requirements analyst</role>
                 <role>architect</role>
                 <role>developer</role>
+                <role>build configuration</role>
+                <role>release manager</role>
             </roles>
             <timezone>Europe/Stockholm</timezone>
             <properties>
@@ -139,6 +146,11 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.4</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
@@ -210,6 +222,8 @@
                         to 'Low'.
                     -->
                     <effort>Max</effort>
+                    <!-- Build doesn't fail if problems are found -->
+                    <failOnError>false</failOnError>
                     <!-- Reports all bugs (other values are medium and max) -->
                     <threshold>Low</threshold>
                     <!-- Produces XML report -->
@@ -336,5 +350,150 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.9</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                    <!--<configLocation>${project.basedir}/checkstyle.xml</configLocation>-->
+                    <suppressionsLocation>${project.basedir}/checkstyle-suppressions.xml</suppressionsLocation>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>checkstyle</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>3.0.3</version>
+                <configuration>
+                    <!--
+                        Enables analysis which takes more memory but finds more bugs.
+                        If you run out of memory, changes the value of the effort element
+                        to 'Low'.
+                    -->
+                    <effort>Max</effort>
+                    <!-- Reports all bugs (other values are medium and max) -->
+                    <threshold>Low</threshold>
+                    <!-- Produces XML report -->
+                    <xmlOutput>true</xmlOutput>
+                    <!-- Configures the directory in which the XML report is created -->
+                    <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+                    <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+                <!--<executions>-->
+                    <!--&lt;!&ndash; Ensures that FindBugs inspects source code when project is compiled. &ndash;&gt;-->
+                    <!--<execution>-->
+                        <!--<id>analyze-compile</id>-->
+                        <!--<phase>verify</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>check</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            </plugin>
+            <plugin>
+                <!--Another source code analyzer. https://pmd.github.io/-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.6</version>
+                <configuration>
+                    <linkXRef>false</linkXRef>
+                    <sourceEncoding>utf-8</sourceEncoding>
+                    <minimumTokens>100</minimumTokens>
+                    <targetJdk>${maven.compiler.source}</targetJdk>
+                    <excludes>
+                    </excludes>
+                    <excludeRoots>
+                    </excludeRoots>
+                </configuration>
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>analyze-compile</id>-->
+                        <!--<phase>verify</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>check</goal>-->
+                            <!--<goal>cpd-check</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>attach-sources</id>-->
+                        <!--<goals>-->
+                            <!--<goal>jar-no-fork</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>attach-javadocs</id>-->
+                        <!--<goals>-->
+                            <!--<goal>jar</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-linkcheck-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <excludedLinks>
+                        <!--<excludedLink>**/archetype/*</excludedLink>-->
+                    </excludedLinks>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.19.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>2.5</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+                <version>2.3</version>
+            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-changes-plugin</artifactId>-->
+                <!--<version>2.12</version>-->
+                <!--<reportSets>-->
+                    <!--<reportSet>-->
+                        <!--<reports>-->
+                            <!--<report>github-report</report>-->
+                        <!--</reports>-->
+                    <!--</reportSet>-->
+                <!--</reportSets>-->
+            <!--</plugin>-->
+        </plugins>
+    </reporting>
 
 </project>
