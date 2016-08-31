@@ -6,7 +6,7 @@
 
     <groupId>com.github.mikkoi.maven.enforcer.rule</groupId>
     <artifactId>char-set-encoding-rule</artifactId>
-    <version>1.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Maven Enforcer Char Set Encoding</name>
     <description>Maven Enforcer plugin: Force the character set of all or any file in the project.</description>
