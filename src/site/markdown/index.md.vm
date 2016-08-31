@@ -5,7 +5,7 @@ Maven Enforcer Plugin Rule: Character Set Encoding
 provides goals to control certain environmental constraints such as Maven version,
 JDK version and OS family along with many more standard rules and user created rules.
 
-`char-set-encoding-rule` is a user created [custom rule](http://maven.apache.org/enforcer/enforcer-api/writing-a-custom-rule.html)
+`${project.artifactId}` is a user created [custom rule](http://maven.apache.org/enforcer/enforcer-api/writing-a-custom-rule.html)
 to force the character set of any or all the files in the build.
 
 It often happens that when files go around between different members of a programming team -- especially
@@ -15,16 +15,17 @@ check that all the files (or only selected files) are encoded in the proper enco
 (year 2016) that would most likely be UTF-8 encoding but other encodings are also still used, often with good reason
 in strictly localized environments.
 
-To use the Enforcer rule, read the [quickstart](quickstart.html) guide.
-
-Released builds are available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cchar-set-encoding-rule).
+* For a quick adoption of the Enforcer rule, check the [Quickstart](quickstart.html) page.
+* To know more about the rule's configuration and parameters check the [Usage page](usage.html).
+* Released builds are available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cchar-set-encoding-rule).
 
 Deducting the Character Set
 ---------------------------
 
 The rule uses the [icu4j](http://icu-project.org/) libraries to try to deduct the file's character set.
-Unfortunately, it is not always possible to get a 100% exact result. There is always some (guessing involved)
-[http://programmers.stackexchange.com/questions/187169/how-to-detect-the-encoding-of-a-file#answer-187174],
+Unfortunately, it is not always possible to get a 100% exact result. There is always some [guessing involved]
+(http://programmers.stackexchange.com/questions/187169/how-to-detect-the-encoding-of-a-file#answer-187174),
 especially when the file contains no text or no text with 8-bit characters. Therefore,
-`char-set-encoding-rule` does not actually try to deduct what a file's character set is. Instead, it asks from `icu4j`
+`${project.artifactId}` does not actually try to deduct what a file's character set is. Instead, it asks from `icu4j`
 if that file's char set is compatible with the wanted character set.
+

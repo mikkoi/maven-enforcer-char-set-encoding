@@ -1,0 +1,21 @@
+Configuration
+=============
+
+Enforcer rule `${project.artifactId}` has the following configuration parameters:
+
+* `<requireEncoding>`
+
+Validate files against this encoding, e.g. `UTF-8`.
+
+* `<directory>`
+
+Which dir to scan, often `src`.
+
+* `<excludeRegex>`
+
+Exclude files with names matching regex below, e.g. `^.*\.(gif|jpg|png)$`.
+
+* `<includeRegex>`
+
+Include files with names matching regex below, e.g. `^.*\.java$`.
+

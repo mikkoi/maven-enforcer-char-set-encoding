@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project
-        xmlns="http://maven.apache.org/DECORATION/1.7.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/DECORATION/1.7.0"
         xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0
         http://maven.apache.org/xsd/decoration-1.7.0.xsd"
         name="Maven Enforcer Char Set Encoding" combine.self="merge">
@@ -36,14 +36,8 @@
 
         <menu name="Maven Enforcer Rule: Character Set Encoding">
             <item name="About" href="index.html"/>
-            <item name="Configuration" href="site-mojo.html"/>
             <item name="Quickstart" href="quickstart.html"/>
-        </menu>
-
-        <menu name="Advanced configuration">
-            <item name="Project / Repository" href="project.html"/>
-            <item name="Upload location" href="locations.html"/>
-            <item name="Maven Phase" href="phase.html"/>
+            <item name="Configuration" href="configuration.html"/>
         </menu>
 
         <menu ref="reports"/>
