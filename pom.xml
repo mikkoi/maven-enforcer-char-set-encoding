@@ -93,6 +93,20 @@
         <sonar.jacoco.reportMissing.force.zero>true</sonar.jacoco.reportMissing.force.zero>
     </properties>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <id>XanitizerRepository</id>
+            <name>XanitizerRepository</name>
+            <url>http://rigs-it.net/maven2</url>
+            <layout>default</layout>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.maven.enforcer</groupId>
@@ -171,16 +185,73 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>3.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.5.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>1.4.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>findbugs-maven-plugin</artifactId>
+                    <version>3.0.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.6</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.0.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.10.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.7.7.201606060606</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.19.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>3.0.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.rigsit</groupId>
+                    <artifactId>xanitizer-maven-plugin</artifactId>
+                    <version>1.0.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.4</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
@@ -189,7 +260,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
                 <executions>
                     <execution>
                         <id>enforce-our-project</id>
@@ -242,7 +312,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.3</version>
                 <configuration>
                     <!--
                         Enables analysis which takes more memory but finds more bugs.
@@ -275,7 +344,6 @@
                 <!--Another source code analyzer. https://pmd.github.io/-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.6</version>
                 <configuration>
                     <linkXRef>false</linkXRef>
                     <sourceEncoding>utf-8</sourceEncoding>
@@ -300,7 +368,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -313,7 +380,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -326,7 +392,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.7.201606060606</version>
                 <!--
                     https://www.petrikainulainen.net/programming/maven/creating-code-coverage-reports-for-unit-and-integration-tests-with-the-jacoco-maven-plugin/
                     http://www.eclemma.org/jacoco/trunk/doc/maven.html
@@ -373,7 +438,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version><!-- 2.19.1 Dec 2015 -->
                 <executions>
                     <execution>
                         <id>default-test</id>
@@ -382,6 +446,7 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
+                            <!--suppress MavenModelInspection -->
                             <argLine>${surefireArgLine}</argLine>
                         </configuration>
                     </execution>
@@ -402,7 +467,6 @@
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.0.2</version>
                 <configuration>
                 </configuration>
                 <executions>
@@ -410,6 +474,93 @@
                         <id>sonar</id>
                         <goals>
                             <goal>sonar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.rigsit</groupId>
+                <artifactId>xanitizer-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                        The location of the Xanitizer installation directory.
+                        This is used to find the binary that runs the analysis.
+                        No default value.
+                    -->
+                    <installDir>${project.basedir}/../Xanitizer-2.3.0</installDir>
+                    <!--
+                        The location of the Xanitizer configuration file that is to be processed.
+                        No default value.
+                    -->
+                    <configFile>${project.basedir}/maven-enforcer-char-set-encoding.XanitizerConfig</configFile>
+                    <!--
+                        Boolean value specifying if a snapshot should be taken of the system being analyzed.
+                        Default: true.
+                     -->
+                    <createSnapshot>true</createSnapshot>
+                    <!--
+                        Optional output file for an overview report.
+                        Default: No overview report.
+                     -->
+                    <overviewReportOutputFile>${project.artifactId}OverviewReport.pdf</overviewReportOutputFile>
+                    <!--
+                        Optional output file for a report with the list of findings.
+                        Default: No report.
+                     -->
+                    <findingsListReportOutputFile>${project.artifactId}FindingsListReport.xml
+                    </findingsListReportOutputFile>
+                    <!--
+                        If a findings list report is generated: flag specifying of only problem findings, or all findings are to be listed.
+                        Default: false.
+                     -->
+                    <onlyProblemsInFindingsListReport>true</onlyProblemsInFindingsListReport>
+                    <!--
+                        Directory into which the analysis results should be exported.
+                        Default: no export is done.
+                    -->
+                    <!--<exportDirectory>${project.build.directory}</exportDirectory> &ndash;&gt;-->
+                    <!--
+                        If exporting is done, the optional pass phrase which is used for encrypting the export file.
+                        Default: no encryption.
+                    -->
+                    <!-- <exportPassphrase></exportPassphrase> -->
+                    <!--
+                        Selects whether the task should fail if there are search paths configured that do not exist anymore.
+                        Default: false.
+                     -->
+                    <haltOnMissingSearchPaths>true</haltOnMissingSearchPaths>
+                    <!--
+                        Boolean value specifying if the build is to be stopped when a *new* finding with a sufficiently high rating is found.
+                        Default: false.
+                     -->
+                    <haltOnNewFindings>false</haltOnNewFindings>
+                    <!--
+                        Floating point value specifying a threshold for the rating starting at which *new* findings are deemed as critical.
+                        Default: 5.0
+                     -->
+                    <newFindingsRatingThreshold>5.0</newFindingsRatingThreshold>
+                    <!--
+                        Boolean value specifying if the build is to be stopped when a finding with a sufficiently high rating is found.
+                        Default: false.
+                     -->
+                    <haltOnFindings>true</haltOnFindings>
+                    <!--
+                        Floating point value specifying a threshold for the rating starting at which findings are deemed as critical.
+                        Default: 5.0
+                     -->
+                    <findingsRatingThreshold>5.0</findingsRatingThreshold>
+                    <!--
+                        Logging level to be used during the analysis.  One of:
+                            OFF, SEVERY, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL
+                        Default: INFO
+                     -->
+                    <!--<XanitizerLogLevel>INFO</XanitizerLogLevel>-->
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>xanitizer</goal>
                         </goals>
                     </execution>
                 </executions>
