@@ -76,6 +76,10 @@
         <java.version>1.7</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.testSource>${java.version}</maven.compiler.testSource>
+        <maven.compiler.testTarget>${java.version}</maven.compiler.testTarget>
+        <maven.compiler.debug>true</maven.compiler.debug>
+        <maven.compiler.optimize>false</maven.compiler.optimize>
         <skip.unit.tests>false</skip.unit.tests>
         <skip.integration.tests>false</skip.integration.tests>
         <!--<surefireArgLine></surefireArgLine> &lt;!&ndash; Dummy, otherwise surefile plugin conf causes IntelliJ to complain &ndash;&gt;-->
@@ -203,6 +207,11 @@
                     <version>1.4.1</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.17</version>
+                </plugin>
+                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>findbugs-maven-plugin</artifactId>
                     <version>3.0.3</version>
@@ -255,6 +264,17 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
+                    <testSource>${maven.compiler.testSource}</testSource>
+                    <testTarget>${maven.compiler.testTarget}</testTarget>
+                    <debug>${maven.compiler.debug}</debug>
+                    <debuglevel>lines,vars,source</debuglevel>
+                    <optimize>${maven.compiler.optimize}</optimize>
+                    <compilerArgs>
+                        <arg>-verbose</arg>
+                        <!-- https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javac.html -->
+                        <!-- Enables all recommended warnings. In this release [Java 8], enabling all available warnings is recommended. -->
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -262,14 +282,14 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>enforce-our-project</id>
+                        <id>enforce-project</id>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>3</version>
+                                    <version>3.2</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <level>ERROR</level>
@@ -289,13 +309,15 @@
                                     <property>project.basedir</property>
                                     <message>Property 'project.basedir' is mandatory!</message>
                                     <regex>.+</regex>
-                                    <regexMessage>Property 'project.basedir' must contain at least one character.</regexMessage>
+                                    <regexMessage>Property 'project.basedir' must contain at least one character.
+                                    </regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>project.build.sourceEncoding</property>
                                     <message>Property 'project.build.sourceEncoding' is mandatory!</message>
                                     <regex>UTF-8</regex>
-                                    <regexMessage>The 'project.build.sourceEncoding' property must be UTF-8.</regexMessage>
+                                    <regexMessage>The 'project.build.sourceEncoding' property must be UTF-8.
+                                    </regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>project.version</property>
@@ -305,132 +327,6 @@
                                 </requireProperty>
                             </rules>
                             <fail>true</fail>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <configuration>
-                    <!--
-                        Enables analysis which takes more memory but finds more bugs.
-                        If you run out of memory, changes the value of the effort element
-                        to 'Low'.
-                    -->
-                    <effort>Max</effort>
-                    <!-- Build doesn't fail if problems are found -->
-                    <failOnError>false</failOnError>
-                    <!-- Reports all bugs (other values are medium and max) -->
-                    <threshold>Low</threshold>
-                    <!-- Produces XML report -->
-                    <xmlOutput>true</xmlOutput>
-                    <!-- Configures the directory in which the XML report is created -->
-                    <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-                    <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-                </configuration>
-                <executions>
-                    <!-- Ensures that FindBugs inspects source code when project is compiled. -->
-                    <execution>
-                        <id>analyze-compile</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <!--Another source code analyzer. https://pmd.github.io/-->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <configuration>
-                    <linkXRef>false</linkXRef>
-                    <sourceEncoding>utf-8</sourceEncoding>
-                    <minimumTokens>100</minimumTokens>
-                    <targetJdk>${maven.compiler.source}</targetJdk>
-                    <excludes>
-                    </excludes>
-                    <excludeRoots>
-                    </excludeRoots>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>analyze-compile</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                            <goal>cpd-check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <!--
-                    https://www.petrikainulainen.net/programming/maven/creating-code-coverage-reports-for-unit-and-integration-tests-with-the-jacoco-maven-plugin/
-                    http://www.eclemma.org/jacoco/trunk/doc/maven.html
-                -->
-                <executions>
-                    <!--
-                        Prepares the property pointing to the JaCoCo runtime agent which
-                        is passed as VM argument when Maven the Surefire plugin is executed.
-                    -->
-                    <execution>
-                        <id>pre-unit-test</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                        <configuration>
-                            <!-- Sets the path to the file which contains the execution data. -->
-                            <destFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</destFile>
-                            <!--
-                                Sets the name of the property containing the settings
-                                for JaCoCo runtime agent.
-                            -->
-                            <propertyName>surefireArgLine</propertyName>
-                        </configuration>
-                    </execution>
-                    <!--
-                        Ensures that the code coverage report for unit tests is created after
-                        unit tests have been run.
-                    -->
-                    <execution>
-                        <id>post-unit-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                        <configuration>
-                            <!-- Sets the path to the file which contains the execution data. -->
-                            <dataFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</dataFile>
-                            <!-- Sets the output directory for the code coverage report. -->
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -478,101 +374,260 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>com.rigsit</groupId>
-                <artifactId>xanitizer-maven-plugin</artifactId>
-                <configuration>
-                    <!--
-                        The location of the Xanitizer installation directory.
-                        This is used to find the binary that runs the analysis.
-                        No default value.
-                    -->
-                    <installDir>${project.basedir}/../Xanitizer-2.3.0</installDir>
-                    <!--
-                        The location of the Xanitizer configuration file that is to be processed.
-                        No default value.
-                    -->
-                    <configFile>${project.basedir}/maven-enforcer-char-set-encoding.XanitizerConfig</configFile>
-                    <!--
-                        Boolean value specifying if a snapshot should be taken of the system being analyzed.
-                        Default: true.
-                     -->
-                    <createSnapshot>true</createSnapshot>
-                    <!--
-                        Optional output file for an overview report.
-                        Default: No overview report.
-                     -->
-                    <overviewReportOutputFile>${project.artifactId}OverviewReport.pdf</overviewReportOutputFile>
-                    <!--
-                        Optional output file for a report with the list of findings.
-                        Default: No report.
-                     -->
-                    <findingsListReportOutputFile>${project.artifactId}FindingsListReport.xml
-                    </findingsListReportOutputFile>
-                    <!--
-                        If a findings list report is generated: flag specifying of only problem findings, or all findings are to be listed.
-                        Default: false.
-                     -->
-                    <onlyProblemsInFindingsListReport>true</onlyProblemsInFindingsListReport>
-                    <!--
-                        Directory into which the analysis results should be exported.
-                        Default: no export is done.
-                    -->
-                    <!--<exportDirectory>${project.build.directory}</exportDirectory> &ndash;&gt;-->
-                    <!--
-                        If exporting is done, the optional pass phrase which is used for encrypting the export file.
-                        Default: no encryption.
-                    -->
-                    <!-- <exportPassphrase></exportPassphrase> -->
-                    <!--
-                        Selects whether the task should fail if there are search paths configured that do not exist anymore.
-                        Default: false.
-                     -->
-                    <haltOnMissingSearchPaths>true</haltOnMissingSearchPaths>
-                    <!--
-                        Boolean value specifying if the build is to be stopped when a *new* finding with a sufficiently high rating is found.
-                        Default: false.
-                     -->
-                    <haltOnNewFindings>false</haltOnNewFindings>
-                    <!--
-                        Floating point value specifying a threshold for the rating starting at which *new* findings are deemed as critical.
-                        Default: 5.0
-                     -->
-                    <newFindingsRatingThreshold>5.0</newFindingsRatingThreshold>
-                    <!--
-                        Boolean value specifying if the build is to be stopped when a finding with a sufficiently high rating is found.
-                        Default: false.
-                     -->
-                    <haltOnFindings>true</haltOnFindings>
-                    <!--
-                        Floating point value specifying a threshold for the rating starting at which findings are deemed as critical.
-                        Default: 5.0
-                     -->
-                    <findingsRatingThreshold>5.0</findingsRatingThreshold>
-                    <!--
-                        Logging level to be used during the analysis.  One of:
-                            OFF, SEVERY, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL
-                        Default: INFO
-                     -->
-                    <!--<XanitizerLogLevel>INFO</XanitizerLogLevel>-->
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>xanitizer</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
+            <id>ci</id>
+            <activation>
+                <property>
+                    <name>env.CONTINUOUS_INTEGRATION</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <configuration>
+                            <!--<configLocation>${project.basedir}/checkstyle.xml</configLocation>-->
+                            <suppressionsLocation>${project.basedir}/checkstyle-suppressions.xml</suppressionsLocation>
+                            <failOnViolation>false</failOnViolation>
+                        </configuration>
+                        <executions>
+                            <!-- Ensures that FindBugs inspects source code when project is compiled. -->
+                            <execution>
+                                <id>analyze-compile</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>findbugs-maven-plugin</artifactId>
+                        <configuration>
+                            <!--
+                                Enables analysis which takes more memory but finds more bugs.
+                                If you run out of memory, changes the value of the effort element
+                                to 'Low'.
+                            -->
+                            <effort>Max</effort>
+                            <!-- Build doesn't fail if problems are found -->
+                            <failOnError>false</failOnError>
+                            <!-- Reports all bugs (other values are medium and max) -->
+                            <threshold>Low</threshold>
+                            <!-- Produces XML report -->
+                            <xmlOutput>true</xmlOutput>
+                            <!-- Configures the directory in which the XML report is created -->
+                            <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+                            <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
+                        </configuration>
+                        <executions>
+                            <!-- Ensures that FindBugs inspects source code when project is compiled. -->
+                            <execution>
+                                <id>analyze-compile</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <!--Another source code analyzer. https://pmd.github.io/-->
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <configuration>
+                            <linkXRef>false</linkXRef>
+                            <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
+                            <minimumTokens>100</minimumTokens>
+                            <targetJdk>${maven.compiler.target}</targetJdk>
+                            <excludes>
+                            </excludes>
+                            <excludeRoots>
+                            </excludeRoots>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>analyze-compile</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                    <goal>cpd-check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.rigsit</groupId>
+                        <artifactId>xanitizer-maven-plugin</artifactId>
+                        <configuration>
+                            <!--
+                                The location of the Xanitizer installation directory.
+                                This is used to find the binary that runs the analysis.
+                                No default value.
+                            -->
+                            <installDir>${project.basedir}/../Xanitizer-2.3.0</installDir>
+                            <!--
+                                The location of the Xanitizer configuration file that is to be processed.
+                                No default value.
+                            -->
+                            <configFile>${project.basedir}/maven-enforcer-char-set-encoding.XanitizerConfig</configFile>
+                            <!--
+                                Boolean value specifying if a snapshot should be taken of the system being analyzed.
+                                Default: true.
+                             -->
+                            <createSnapshot>true</createSnapshot>
+                            <!--
+                                Optional output file for an overview report.
+                                Default: No overview report.
+                             -->
+                            <overviewReportOutputFile>${project.artifactId}-OverviewReport.pdf
+                            </overviewReportOutputFile>
+                            <!--
+                                Optional output file for a report with the list of findings.
+                                Default: No report.
+                             -->
+                            <findingsListReportOutputFile>${project.artifactId}-FindingsListReport.xml
+                            </findingsListReportOutputFile>
+                            <!--
+                                If a findings list report is generated: flag specifying of only problem findings, or all findings are to be listed.
+                                Default: false.
+                             -->
+                            <onlyProblemsInFindingsListReport>true</onlyProblemsInFindingsListReport>
+                            <!--
+                                Directory into which the analysis results should be exported.
+                                Default: no export is done.
+                            -->
+                            <!--<exportDirectory>${project.build.directory}</exportDirectory> &ndash;&gt;-->
+                            <!--
+                                If exporting is done, the optional pass phrase which is used for encrypting the export file.
+                                Default: no encryption.
+                            -->
+                            <!-- <exportPassphrase></exportPassphrase> -->
+                            <!--
+                                Selects whether the task should fail if there are search paths configured that do not exist anymore.
+                                Default: false.
+                             -->
+                            <haltOnMissingSearchPaths>false</haltOnMissingSearchPaths>
+                            <!--
+                                Boolean value specifying if the build is to be stopped when a *new* finding with a sufficiently high rating is found.
+                                Default: false.
+                             -->
+                            <haltOnNewFindings>false</haltOnNewFindings>
+                            <!--
+                                Floating point value specifying a threshold for the rating starting at which *new* findings are deemed as critical.
+                                Default: 5.0
+                             -->
+                            <newFindingsRatingThreshold>5.0</newFindingsRatingThreshold>
+                            <!--
+                                Boolean value specifying if the build is to be stopped when a finding with a sufficiently high rating is found.
+                                Default: false.
+                             -->
+                            <haltOnFindings>true</haltOnFindings>
+                            <!--
+                                Floating point value specifying a threshold for the rating starting at which findings are deemed as critical.
+                                Default: 5.0
+                             -->
+                            <findingsRatingThreshold>5.0</findingsRatingThreshold>
+                            <!--
+                                Logging level to be used during the analysis.  One of:
+                                    OFF, SEVERY, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL
+                                Default: INFO
+                             -->
+                            <!--<XanitizerLogLevel>INFO</XanitizerLogLevel>-->
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>xanitizer</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <!--
+                            https://www.petrikainulainen.net/programming/maven/creating-code-coverage-reports-for-unit-and-integration-tests-with-the-jacoco-maven-plugin/
+                            http://www.eclemma.org/jacoco/trunk/doc/maven.html
+                        -->
+                        <executions>
+                            <!--
+                                Prepares the property pointing to the JaCoCo runtime agent which
+                                is passed as VM argument when Maven the Surefire plugin is executed.
+                            -->
+                            <execution>
+                                <id>pre-unit-test</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- Sets the path to the file which contains the execution data. -->
+                                    <destFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</destFile>
+                                    <!--
+                                        Sets the name of the property containing the settings
+                                        for JaCoCo runtime agent.
+                                    -->
+                                    <propertyName>surefireArgLine</propertyName>
+                                </configuration>
+                            </execution>
+                            <!--
+                                Ensures that the code coverage report for unit tests is created after
+                                unit tests have been run.
+                            -->
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- Sets the path to the file which contains the execution data. -->
+                                    <dataFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</dataFile>
+                                    <!-- Sets the output directory for the code coverage report. -->
+                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>release</id>
             <properties>
                 <maven.compiler.debug>false</maven.compiler.debug>
+                <maven.compiler.optimize>true</maven.compiler.optimize>
             </properties>
             <build>
                 <plugins>
@@ -613,7 +668,7 @@
 
     <distributionManagement>
         <downloadUrl>
-            https://oss.sonatype.org/service/local/repositories/releases/content/com/github/mikkoi/maven/enforcer/rule/char-set-encoding-rule/1.0/char-set-encoding-rule-1.0.jar
+            https://oss.sonatype.org/service/local/repositories/releases/content/com/github/mikkoi/maven/enforcer/rule/char-set-encoding-rule/${project.version}}/${maven.compiler.target}
         </downloadUrl>
         <snapshotRepository>
             <id>ossrh</id>
@@ -696,16 +751,16 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.10.4</version>
             </plugin>
-            <!--<plugin>-->
-            <!--<groupId>org.apache.maven.plugins</groupId>-->
-            <!--<artifactId>maven-linkcheck-plugin</artifactId>-->
-            <!--<version>1.2</version>-->
-            <!--<configuration>-->
-            <!--<excludedLinks>-->
-            <!--&lt;!&ndash;<excludedLink>**/archetype/*</excludedLink>&ndash;&gt;-->
-            <!--</excludedLinks>-->
-            <!--</configuration>-->
-            <!--</plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-linkcheck-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <excludedLinks>
+                        <!--<excludedLink>**/archetype/*</excludedLink>-->
+                    </excludedLinks>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
@@ -722,16 +777,16 @@
                 <version>2.3</version>
             </plugin>
             <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-changes-plugin</artifactId>-->
-                <!--<version>2.12</version>-->
-                <!--<reportSets>-->
-                    <!--<reportSet>-->
-                        <!--<reports>-->
-                            <!--<report>github-report</report>-->
-                        <!--</reports>-->
-                    <!--</reportSet>-->
-                <!--</reportSets>-->
+            <!--<groupId>org.apache.maven.plugins</groupId>-->
+            <!--<artifactId>maven-changes-plugin</artifactId>-->
+            <!--<version>2.12</version>-->
+            <!--<reportSets>-->
+            <!--<reportSet>-->
+            <!--<reports>-->
+            <!--<report>github-report</report>-->
+            <!--</reports>-->
+            <!--</reportSet>-->
+            <!--</reportSets>-->
             <!--</plugin>-->
             <plugin>
                 <groupId>org.jacoco</groupId>
